@@ -1,13 +1,14 @@
 import { useParams } from "react-router";
 import Text from "../components/text";
 import Container from "../components/container";
-import type { Photo } from "../contexts/photos/models/photo";
 import Skeleton from "../components/skeleton";
 import PhotosNavigator from "../contexts/photos/components/photos-navigatior";
 import ImagePreview from "../components/image-preview";
 import Button from "../components/button";
 import AlbumsListSelectable from "../contexts/albums/components/albums-list-selectable";
 import useAlbums from "../contexts/albums/hooks/use-albums";
+import usePhoto from "../contexts/photos/hooks/use-photo";
+import type { Photo } from "../contexts/photos/models/photo";
 
 type Params = {
   id: string;
@@ -15,39 +16,37 @@ type Params = {
 
 export default function PagePhotoDetails() {
   const { id } = useParams<Params>();
+  const { photo, isLoadingPhoto } = usePhoto(id);
   const { albums, isLoadingAlbums } = useAlbums();
-  const isLoading = false;
-  const photo = {
-    id: "123",
-    title: "Hello",
-    imageId: "portrait-tower.png",
-    albums: [
-      { id: "1", title: "Natureza" },
-      { id: "2", title: "Viagem" },
-      { id: "1", title: "Natureza" },
-    ],
-  } as Photo;
+
+  if (!isLoadingPhoto && !photo) {
+    return <div>Foto não encontrada</div>;
+  }
 
   return (
     <Container>
       <header className="flex items-center justify-between gap-8 mb-8">
-        {!isLoading ? (
+        {!isLoadingPhoto ? (
           <Text as="h2" variant="heading-large">
             {" "}
-            {photo.title}{" "}
+            {photo?.title}{" "}
           </Text>
         ) : (
           <Skeleton className="w-48 h-8" />
         )}
 
-        <PhotosNavigator loading={isLoading} />
+        <PhotosNavigator
+          previousPhotoId={photo?.previousPhotoId}
+          nextPhotoId={photo?.nextPhotoId}
+          loading={isLoadingPhoto}
+        />
       </header>
 
       <div className="grid grid-cols-[21rem_1fr] gap-24">
         <div className="space-y-3">
-          {!isLoading ? (
+          {!isLoadingPhoto ? (
             <ImagePreview
-              src={`/images/${photo?.imageId}`}
+              src={`${import.meta.env.VITE_IMAGES_URL}/${photo?.imageId}`}
               title={photo?.title}
               imageClassName="h-[21rem]"
             />
@@ -55,7 +54,7 @@ export default function PagePhotoDetails() {
             <Skeleton className="h-[21rem]" />
           )}
 
-          {!isLoading ? (
+          {!isLoadingPhoto ? (
             <Button variant="destructive">Excluir</Button>
           ) : (
             <Skeleton className="w-20 h-10" />
@@ -69,7 +68,7 @@ export default function PagePhotoDetails() {
 
           <AlbumsListSelectable
             loading={isLoadingAlbums}
-            photo={photo}
+            photo={photo as Photo}
             albums={albums}
           />
         </div>
